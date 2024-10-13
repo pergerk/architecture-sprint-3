@@ -1,0 +1,69 @@
+@startuml smart_home
+title SmartHome Components Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Container(spa, "Веб интерфейс")
+Container(ma, "Mobile App")
+Container(deviceExt, "External Device")
+
+ContainerDb(dbDevice, "Device DB", "PostgreSQL")
+ContainerDb(dbUser, "User DB", "PostgreSQL")
+ContainerDb(dbHome, "Home DB", "PostgreSQL")
+ContainerQueue(kafka, "Queue", "Kafka")
+
+Container(apiGW, "API GW")
+
+Container_Boundary(devicesManagementContainer, "Devices Management Serivce") {
+    Component(device, "Device Controller", "MVC Rest Controller")
+    Component(deviceController, "Device Api Controller", "MQTT Controller")
+    Component(deviceService, "Device Business Logic")
+    Component(deviceFacade, "Device Adapter", "Updates device configuration")
+    Component(kafkaDeviceAdapter, "Kafka Adapter")
+
+    Rel(device, deviceService, "Uses", )
+    Rel(deviceService, dbDevice, "Read & write to")
+    Rel(deviceService, deviceFacade, "Uses")
+    Rel(deviceFacade, deviceController, "Uses" )
+    Rel(deviceFacade, kafkaDeviceAdapter, "Send", "Events" )
+    Rel(deviceService, kafkaDeviceAdapter, "Send",  "Events")
+    Rel(kafkaDeviceAdapter, deviceService, "Read",  "Events")
+    Rel(kafkaDeviceAdapter, kafka, "Uses")
+}
+
+Container_Boundary(homeManagementContainer, "Home Management Service") {
+    Component(home, "Home Controller", "MVC Rest Controller")
+    Component(homeService, "Home Business Logic")
+    Component(kafkaHomeAdapter, "Kafka Adapter")
+
+    Rel(home, homeService, "Uses", )
+    Rel(homeService, dbHome, "Read & write to")
+    Rel(homeService, kafkaHomeAdapter, "Send",  "Events")
+    Rel(kafkaHomeAdapter, homeService, "Read",  "Events")
+    Rel(kafkaHomeAdapter, kafka, "Uses")
+}
+
+Container_Boundary(userManagementContainer, "User Management Service") {
+    Component(user, "User Controller", "MVC Rest Controller")
+    Component(userService, "User Business Logic")
+    Component(kafkaUserAdapter, "Kafka Adapter ")
+
+    Rel(user, userService, "Uses", )
+    Rel(userService, dbUser, "Read & write to")
+    Rel(userService, kafkaUserAdapter, "Send",  "Events")
+    Rel(kafkaUserAdapter, userService, "Read",  "Events")
+    Rel(kafkaUserAdapter, kafka, "Uses")
+}
+
+
+Rel(spa, apiGW, "Uses", "JSON/HTTPS")
+Rel(ma, apiGW, "Uses", "JSON/HTTPS")
+
+Rel(deviceExt,  apiGW, "Uses", "MQTT")
+
+Rel(apiGW, devicesManagementContainer, "")
+Rel(apiGW, homeManagementContainer, "")
+Rel(apiGW, userManagementContainer, "")
+@enduml

@@ -1,0 +1,14 @@
+@startuml smart_home
+title Heating Context Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "User", "Пользователь")
+
+System(HeatingSystem, "Heating System", "Управление обогревом и температурой")
+
+Rel(user, HeatingSystem, "Вкл/Выкл обогрева")
+Rel(user, HeatingSystem, "Установка температуры")
+@enduml

@@ -1,0 +1,55 @@
+@startuml smart_home
+title SmartHome Containers Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Container.puml
+
+
+Person(user, "User")
+
+Container(ApiGW, "Gateway")
+System_Boundary(User, "User pod"){
+    Container(UserService, "User management service")
+    ContainerDb(UserDB, "User Database service")
+}
+System_Boundary(Heating, "Heating pod"){
+    Container(HeatingService, "Heating service")
+    ContainerDb(HeatingDB, "Heating Database service")
+}
+System_Boundary(Sensor, "Sensor pod"){
+    Container(SensorService, "Sensor service")
+    ContainerDb(SensorDB, "Sensor Database service")
+}
+System_Boundary(Device, "Device pod"){
+    Container(DeviceService, "Device service")
+    ContainerDb(DeviceDB, "Device Database service")
+}
+
+System_Boundary(EventStore, "EventStore pod"){
+    Container(EventStoreService, "EventStore service")
+    ContainerDb(EventStoreDB, "EventStore Database service")
+}
+
+System_Boundary(Kafka, "Kafka pod"){
+    ContainerQueue(KafkaService, "Шина сообщений", "Kafka")
+}
+
+Rel(user, ApiGW, "request")
+
+Rel(ApiGW, User, "")
+Rel(ApiGW, Heating, "")
+Rel(ApiGW, Sensor, "")
+Rel(ApiGW, Device, "")
+
+Rel(UserService, UserDB, "")
+Rel(HeatingService, HeatingDB, "")
+Rel(SensorService, SensorDB, "")
+Rel(DeviceService, DeviceDB, "")
+
+Rel(UserService, Kafka, "")
+Rel(HeatingService, Kafka, "")
+Rel(SensorService, Kafka, "")
+Rel(DeviceService, Kafka, "")
+Rel(EventStore, Kafka, "")
+@enduml

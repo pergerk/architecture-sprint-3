@@ -1,0 +1,150 @@
+@startuml smart_home
+title Heating Code Diagram
+
+top to bottom direction
+
+Class DeviceController {
+  -Service deviceService
+
+  +Device create(config)
+  +Device read(id)
+  +Device update(id, config)
+  +void delete(id)
+}
+
+Class DeviceService {
+  -Repository deviceRepository
+  -KafkaAdapter commandBus
+  -KafkaAdapter eventBus
+  +Device create(config)
+  +Device read(id)
+  +Device update(id, config)
+  +void delete(id)
+}
+
+class SetTemperatureCommand {
+    void run()
+}
+class CreateDeviceCommand {
+    void run()
+}
+
+class DeviceCommandHandler {
+    +void handle(Command)
+}
+DeviceCommandHandler::handle --> SetTemperatureCommand::run
+DeviceCommandHandler::handle --> CreateDeviceCommand::run
+
+
+DeviceController::create --> DeviceService::create
+DeviceService::create --> DeviceCommandHandler
+DeviceController::update --> DeviceService::update
+DeviceService::update --> DeviceCommandHandler
+DeviceController::delete --> DeviceService::delete
+DeviceService::delete --> DeviceCommandHandler
+DeviceController::read --> DeviceService::read
+DeviceService::read --> RepositoryDevice::get
+
+Class DeviceSaga {
+    -KafkaAdapter eventBus
+    -Repository storeRepository
+    +void init()
+}
+
+Class KafkaAdapter {
+    +void sendEvent(eventName, data)
+    +Object sendCommand(data)
+    +void processEvent(eventName, callback)
+    +void processCommand(comandName, callback)
+}
+
+
+metaclass RepositoryAbstract <<type T>>  {
+  +<type> create(config)
+  +<type>  get(id)
+  +<type> [] find()
+  +<type>  update(id, config)
+  +<type>  delete(id)
+}
+
+
+class RepositoryDevice extends RepositoryAbstract {
+  +void create(config)
+  +Device get(id)
+  +Device[] find(user_id)
+  +void update(id, config)
+  +void delete(id)
+}
+
+Class RepositoryStore extends RepositoryAbstract {
+  +void create(payload)
+  +DeviceEventStore get(id)
+  +DeviceEventStore[] find()
+}
+
+abstract AbstractDevice {
+  -String deviceType
+  -Object data <serializable>
+}
+
+Class Object <Serializable>{}
+hide Object
+
+entity Device  extends AbstractDevice{
+    +Ulid id
+    +Ulid home_id
+    +Ulid user_id
+    +DeviceType deviceType
+    +Object config
+}
+entity DeviceEventStore {
+    +Ulid id
+    +String eventType
+    +Object payload
+    +Date receivedAt
+}
+entity DeviceType {
+    +Ulid id
+    +String type
+    +String description
+}
+
+DeviceService::deviceRepository --> RepositoryDevice
+DeviceService::eventBus --> KafkaAdapter
+DeviceService::commandBus --> KafkaAdapter
+DeviceSaga::storeRepository --> RepositoryStore
+DeviceSaga::eventBus --> KafkaAdapter
+RepositoryDevice --> Device
+RepositoryStore --> DeviceEventStore
+Device::deviceType --> DeviceType
+DeviceController::deviceService -->DeviceService
+
+abstract DeviceEvent implements DeviceEventStore{
+    abstract void rollback()
+}
+
+Class CreateDeviceEvent extends DeviceEvent {
+    +Ulid id
+    -String eventName
+    -String deviceType
+    -Object payload
+    void rollback()
+}
+
+Class UpdateDeviceEvent extends DeviceEvent {
+    +Ulid id
+    -String eventName
+    -String deviceType
+    -Object payload
+    void rollback()
+}
+Class DeleteDeviceEvent extends DeviceEvent {
+    +Ulid id
+    -String eventName
+    -String deviceType
+    -Object payload
+    void rollback()
+}
+
+
+@enduml

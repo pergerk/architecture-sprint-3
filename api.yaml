@@ -1,22 +1,233 @@
 openapi: 3.0.0
 info:
-  title: simple-api
+  title: smart-home-api
   version: 0.1.0
 
 paths:
-  /hello:
+  /devices/{device_id}:
     get:
+      summary: Конфигурация устройства
+      description: Получение конфигурации устройства
       responses:
         '200':
-          description: A simple hello world!
+          description: Конфигурация устройства
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-              example: Hello from a mocked response!
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Описание устройства
+                  deviceType:
+                    type: string
+                    description: Тип устройства
+                  room_id:
+                    type: string
+                    description: Комната в котором расположенно устройсво
+                  enabled:
+                    type: boolean
+                    description: Вкл/Выкл устройства
+                  current_temp:
+                    type: number
+                    description: Текущая температура
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    description: Not allowed for current user
+                    example: Permission denied for current user
+        '404':
+          description: Device Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: error message
+                    example: Device Not Found
+                  error:
+                    type: string
+                    description: Explain where is error found
+                    example: Entity not found
       x-kusk:
         upstream:
           service:
-            name: hello-world-svc
+            name: device-service
+            namespace: default
+            port: 8080
+  /devices/{device_id}/status:
+    put:
+      summary: 'Установить статус устройства'
+      description: 'Установка статуса устройства'
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  description: Статус устройства
+                  enum:
+                    - on
+                    - off
+
+      responses:
+        '200':
+          description: OK
+      x-kusk:
+        upstream:
+          service:
+            name: device-service
+            namespace: default
+            port: 8080
+
+  /devices/{device_id}/command:
+    post:
+      summary: 'Команды устройству'
+      description: 'Выполнить команду на устройстве'
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cmd:
+                  type: string
+                  example: setTemperature
+                parameters:
+                  type: object
+                  properties:
+                    value:
+                      type: number
+                      description: 'Установленная температура'
+                      example: 32
+
+      responses:
+        '201':
+          description: OK
+        '404':
+          description: Device Not Found
+      x-kusk:
+        upstream:
+          service:
+            name: device-service
+            namespace: default
+            port: 8080
+
+  /devices/{device_id}/telemetry/latest:
+    get:
+      summary: Телеметрия устройства
+      description: 'Получение телеметрии устройства'
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Описание устройства
+                  device_type:
+                    type: string
+                    description: Тип устройства
+                  latest:
+                    type: object
+                    description: Динамический обьект последних данных телеметрии в зависимости от типа
+
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    description: Not allowed for current user
+                    example: Permission denied for current user
+        '404':
+          description: Device Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: error message
+                    example: Device Not Found
+                  error:
+                    type: string
+                    description: Explain where is error found
+                    example: Entity not found
+      x-kusk:
+        upstream:
+          service:
+            name: telemetry-service
+            namespace: default
+            port: 8080
+  /devices/{device_id}/telemetry:
+    get:
+      description: 'Получение телеметрии с устройства'
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: Описание устройства
+                  deviceType:
+                    type: string
+                    description: Тип устройства
+                  parameters:
+                    type: object
+                    description: Динамический список параметров в зависимости от типа
+
+        '403':
+          description: Permission denied
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                    description: Not allowed for current user
+                    example: Permission denied for current user
+        '404':
+          description: Device Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: error message
+                    example: Device Not Found
+                  error:
+                    type: string
+                    description: Explain where is error found
+                    example: Entity not found
+      x-kusk:
+        upstream:
+          service:
+            name: telemetry-service
             namespace: default
             port: 8080

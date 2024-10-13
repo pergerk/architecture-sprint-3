@@ -1,0 +1,50 @@
+@startuml smart_home
+title Heating Code Diagram
+
+top to bottom direction
+
+entity User {
+  +Ulid id
+}
+
+entity Home {
+   +Ulid id
+   +Ulid userId
+}
+
+entity Device {
+  +Ulid id
+  +Ulid typeId
+  +Ulid homeId
+  +Sring name
+}
+
+entity Module {
+  +Ulid id
+  +String name
+  +String driver
+  +Object config
+}
+
+entity DeviceType {
+  +Ulid id
+  +Sring name
+  +String description
+  +Object initialConfig
+  +Ulid moduleId
+}
+
+entity TelemetryData {
+    +Ulid id
+    +Ulid deviceId
+    +Object data
+    +Date receivedAt
+}
+
+User::id "0.." -left-{ Home::userId
+Home::id "0.." -left-{ Device::homeId
+DeviceType::id "0.." --{ Device::typeId
+Module::id "0.." --{ DeviceType::moduleId
+Device::id "0.." --{ TelemetryData::deviceId
+
+@enduml
