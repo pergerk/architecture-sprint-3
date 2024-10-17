@@ -1,14 +1,28 @@
 @startuml smart_home
 title Heating Context Diagram
 
-top to bottom direction
-
 !includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
 
 Person(user, "User", "Пользователь")
 
-System(HeatingSystem, "Heating System", "Управление обогревом и температурой")
+System_Boundary(Heating, "Heating System") {
+    Container(HeatingApi, "Heating System", "Управление обогревом и температурой")
+    ContainerDb(HeatingDb, "Heating DB", "Хранилище данных")
+}
+System_Boundary(home, "Home") {
+   System_Ext(boiler_api, "Датчик управления обогревом", $sprite="robot")
+   System_Ext(sensor_api, "Датчик температуры",$sprite="robot")
+ }
 
-Rel(user, HeatingSystem, "Вкл/Выкл обогрева")
-Rel(user, HeatingSystem, "Установка температуры")
+
+
+BiRel_L(boiler_api, Heating, , "Установка\nтемпературы\nи вкл/выкл")
+BiRel_L(sensor_api, Heating, , "Телеметрия температуры")
+
+Lay_D(boiler_api, sensor_api )
+
+Rel_D(user, Heating, "Вкл/Выкл\nобогрева")
+Rel_D(user, Heating, "Установка\nтемпературы")
+Rel_D(HeatingApi, HeatingDb, "uses")
+
 @enduml

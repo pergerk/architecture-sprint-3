@@ -11,36 +11,47 @@ Person(user, "User")
 Container(ApiGW, "Gateway")
 System_Boundary(User, "User pod"){
     Container(UserService, "User management service")
-    ContainerDb(UserDB, "User Database service")
+    ContainerDb(UserDB, "User Database service", "PostgreSql")
 }
 System_Boundary(Heating, "Heating pod"){
     Container(HeatingService, "Heating service")
-    ContainerDb(HeatingDB, "Heating Database service")
+    ContainerDb(HeatingDB, "Heating Database service", "PostgreSql")
 }
 System_Boundary(Sensor, "Sensor pod"){
     Container(SensorService, "Sensor service")
-    ContainerDb(SensorDB, "Sensor Database service")
+    ContainerDb(SensorDB, "Sensor Database service", "PostgreSql")
 }
 System_Boundary(Device, "Device pod"){
     Container(DeviceService, "Device service")
-    ContainerDb(DeviceDB, "Device Database service")
+    ContainerDb(DeviceDB, "Device Database service", "PostgreSql")
 }
 
 System_Boundary(EventStore, "EventStore pod"){
     Container(EventStoreService, "EventStore service")
-    ContainerDb(EventStoreDB, "EventStore Database service")
+    ContainerDb(EventStoreDB, "EventStore Database service", "MongoDb")
 }
 
 System_Boundary(Kafka, "Kafka pod"){
     ContainerQueue(KafkaService, "Шина сообщений", "Kafka")
 }
 
+System_Boundary(home, "Home") {
+   System_Ext(boiler_api, "Датчик управления обогревом", $sprite="robot")
+   System_Ext(sensor_api, "Датчик температуры",$sprite="robot")
+ }
+
+
 Rel(user, ApiGW, "request")
+
+Rel_D(boiler_api, ApiGW, "mqtt")
+Rel_D(sensor_api, ApiGW, "mqtt")
 
 Rel(ApiGW, User, "")
 Rel(ApiGW, Heating, "")
 Rel(ApiGW, Sensor, "")
 Rel(ApiGW, Device, "")
+
+Rel_D(EventStoreService, EventStoreDB, "uses")
 
 Rel(UserService, UserDB, "")
 Rel(HeatingService, HeatingDB, "")
