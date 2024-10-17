@@ -1,0 +1,90 @@
+@startuml smart_home
+title SmartHome Components Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "User")
+
+
+
+Container(spa, "Веб интерфейс")
+Container(ma, "Mobile App")
+
+Rel_D(user, spa, "")
+Rel_D(user, ma, "")
+
+System_Boundary(home, "Home") {
+   System_Ext(boiler_api, "Датчик управления обогревом", $sprite="robot")
+   System_Ext(sensor_api, "Датчик температуры",$sprite="robot")
+ }
+
+ContainerDb(dbDevice, "Device DB", "PostgreSQL")
+ContainerDb(dbUser, "User DB", "PostgreSQL")
+ContainerDb(dbHome, "Home DB", "PostgreSQL")
+ContainerQueue(kafka, "Queue", "Kafka")
+
+Container(apiGW, "API GW", "traefik")
+Container(tcpGW, "TCP GW", "traefik")
+
+Container_Boundary(devicesManagementContainer, "Devices Management Serivce") {
+    Component(deviceManagementController, "Device Controller", "MVC Rest Controller")
+    Component(deviceController, "Device Api Controller", "MQTT Controller")
+    Component(deviceService, "Device Business Logic")
+    Component(deviceFacade, "Device Adapter", "Updates device configuration")
+    Component(kafkaDeviceAdapter, "Kafka Adapter")
+
+    Rel(deviceManagementController, deviceService, "Uses", )
+    Rel(deviceService, dbDevice, "r/w", "DB")
+    Rel(deviceService, deviceFacade, "Uses")
+    Rel(deviceController, deviceFacade, "Uses" )
+    Rel(deviceFacade, kafkaDeviceAdapter, "Send", "Events" )
+    Rel(deviceService, kafkaDeviceAdapter, "Send",  "Events")
+    Rel(kafkaDeviceAdapter, deviceService, "Read",  "Events")
+    Rel(kafkaDeviceAdapter, kafka, "Uses")
+}
+
+Container_Boundary(mqttBridge, "Mqtt Kafka Bridge") {
+    Component(bridge, "MQTT", "Kafka Bridge")
+}
+
+Container_Boundary(homeManagementContainer, "Home Management Service") {
+    Component(homeController, "Home Controller", "MVC Rest Controller")
+    Component(homeService, "Home Business Logic")
+    Component(kafkaHomeAdapter, "Kafka Adapter")
+
+    Rel(homeController, homeService, "Uses", )
+    Rel(homeService, dbHome, "r/w", "DB")
+    Rel(homeService, kafkaHomeAdapter, "Send",  "Events")
+    Rel(kafkaHomeAdapter, homeService, "Read",  "Events")
+    Rel(kafkaHomeAdapter, kafka, "Uses")
+}
+
+Container_Boundary(userManagementContainer, "User Management Service") {
+    Component(userController, "User Controller", "MVC Rest Controller")
+    Component(userService, "User Business Logic")
+    Component(kafkaUserAdapter, "Kafka Adapter ")
+
+    Rel(userController, userService, "Uses", )
+    Rel(userService, dbUser, "r/w", "DB")
+    Rel(userService, kafkaUserAdapter, "Send",  "Events")
+    Rel(kafkaUserAdapter, userService, "Read",  "Events")
+    Rel(kafkaUserAdapter, kafka, "Uses")
+}
+
+
+Rel(spa, apiGW, "Uses", "JSON/HTTPS")
+Rel(ma, apiGW, "Uses", "JSON/HTTPS")
+
+Rel(boiler_api,  tcpGW, "Uses", "MQTT")
+Rel(sensor_api,  tcpGW, "Uses", "MQTT")
+Rel(tcpGW, bridge, "MQTT")
+Rel(bridge, kafka, "Device events", "MQTT")
+Rel(kafka, deviceController, "Event from device", "MQTT")
+
+
+Rel(apiGW, deviceManagementController, "JSON/HTTP")
+Rel(apiGW, homeController, "JSON/HTTP")
+Rel(apiGW, userController, "JSON/HTTP")
+@enduml

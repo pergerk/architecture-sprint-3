@@ -1,0 +1,145 @@
+asyncapi: 3.0.0
+info:
+  title: Home Kafka API
+  version: 1.0.0
+  description: |-
+    Описание сообщений обмена в микросервисах
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+defaultContentType: application/json
+servers:
+  kafka-broker:
+    host: kafka-service:18092
+    protocol: ''
+    description: Брокер
+channels:
+
+  device:
+    address: smarthome.device
+    description: 'Основные события связанные с устройством '
+    messages:
+      status:
+        $ref: '#/components/messages/status'
+      deviceCreate:
+        $ref: '#/components/messages/createDevice'
+      deviceEdit:
+        $ref: '#/components/messages/editDevice'
+      deviceRemove:
+        $ref: '#/components/messages/removeDevice'
+
+  telemetry:
+    address: smarthome.telemetry
+    messages:
+      telemetry:
+        $ref: '#/components/messages/telemetry'
+
+operations:
+  receiveStatus:
+    action: receive
+    channel:
+      $ref: '#/channels/device'
+    summary: >-
+      Полуает события об измененнии состояния устройства
+    messages:
+      - $ref: '#/channels/device/messages/status'
+  deviceCreate:
+    action: send
+    channel:
+      $ref: '#/channels/device'
+    messages:
+      - $ref: '#/channels/device/messages/deviceCreate'
+  deviceRemove:
+    action: send
+    channel:
+      $ref: '#/channels/device'
+    messages:
+      - $ref: '#/channels/device/messages/deviceRemove'
+  telemetryReceive:
+    action: receive
+    description: Получает данные о телеметрии устройства
+    channel:
+      $ref: '#/channels/telemetry'
+    messages:
+      - $ref: '#/channels/telemetry/messages/telemetry'
+
+components:
+  messages:
+    status:
+      name: status
+      title: Изменение статуса устройства
+      summary: >-
+        Включение или выключение устройства
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/status'
+    createDevice:
+      name: device
+      title: Добавление  устройства
+      summary: Команда на добавление или удаление устройства
+      payload:
+        $ref: '#/components/schemas/deviceCreate'
+
+    editDevice:
+      name: deviceEdit
+      title: Редактирование устройства
+      payload:
+        $ref: '#/components/schemas/deviceEdit'
+
+    removeDevice:
+      name: removeDevice
+      payload:
+        $ref:  '#/components/schemas/deviceRemove'
+
+    telemetry:
+      payload:
+        type: object
+
+  schemas:
+    deviceCreate:
+      type: object
+      properties:
+        deviceTypeId:
+          $ref: '#/components/schemas/deviceTypeId'
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    deviceEdit:
+      type: object
+      properties:
+        deviceId:
+          $ref: '#/components/schemas/deviceId'
+        deviceTypeId:
+          $ref: '#/components/schemas/deviceTypeId'
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    deviceRemove:
+      type: object
+      properties:
+        deviceId:
+          $ref: '#/components/schemas/deviceId'
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    status:
+      type: object
+      properties:
+        deviceId:
+          $ref: '#/components/schemas/deviceId'
+        status:
+          type: string
+          enum:
+            - 'on'
+            - 'off'
+          description: ИЗменение
+        sentAt:
+          $ref: '#/components/schemas/sentAt'
+    deviceId:
+      type: string
+      description: Идентификтатор устройства Ulid
+    deviceTypeId:
+      type: string
+      description: Идентификтатор типа устройства Ulid
+    sentAt:
+      type: string
+      format: date-time
+      description: Дата отправки сообщения
+
